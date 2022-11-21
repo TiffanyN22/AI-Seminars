@@ -22,7 +22,8 @@ snake_body = []
 snake_body_length=0
 food_index = 0
 global prev_food
-
+bfs_visualize = False
+best_path_visualize = False
 
 adjacencies = { # Create an adjacency list.
     
@@ -45,7 +46,7 @@ def distance(a, b): # Function to compute distance between two points.
     return math.sqrt(x_distance**2+y_distance**2)
 
 class Cell: # Cell class
-    def __init__(self, x, y, length=False, obstacle=False, current=False, food=False, body=False):
+    def __init__(self, x, y, length=False, obstacle=False, current=False, food=False, body=False, node_checked=False, adjacent_checked=False, path_visualize=False):
         self.x = x
         self.y = y
         self.length = length
@@ -53,12 +54,23 @@ class Cell: # Cell class
         self.current = current
         self.food = food
         self.body = body
+
+        #for visualization
+        self.node_checked = node_checked
+        self.adjacent_checked = adjacent_checked
+        self.path_visualize = path_visualize
         
     def draw(self):
         
         cell = pygame.Rect(self.y * self.length, self.x * self.length, self.length, self.length)
-        
-        if self.obstacle:
+
+        if self.path_visualize:
+            pygame.draw.rect(screen, (153,255,255), cell)
+        elif self.node_checked:
+            pygame.draw.rect(screen, (255,153,204), cell)
+        elif self.adjacent_checked:
+            pygame.draw.rect(screen, (255,204,229), cell)
+        elif self.obstacle:
             pygame.draw.rect(screen, 'black', cell)
         elif self.current:
             pygame.draw.rect(screen, 'green', cell)
@@ -75,7 +87,7 @@ class Cell: # Cell class
     def neighbors(self, cell): # Method to compute whether two cells are neighbors or not.
         return distance(self.midpoint(), cell.midpoint())-self.length == 0
 
-# Subroutine to randomly generate a maze
+# Subroutine to randomly generate a map with obstacles
 def init(): 
     global cells, adjacencies, visited, dist, pred
     cells, adjacencies = [], {}
@@ -101,21 +113,20 @@ def refresh_adjacencies():
   global cells, adjacencies
   for i in cells:
         adjacencies[i] = []
-
         for j in cells:
             if (i != j and not i.obstacle and not j.obstacle and not i.body and not j.body):
                 if i.neighbors(j):
                     adjacencies[i].append(j)
+        
 
 def bfs(adjacencies, root, target, nodes, node_count): # BFS implementation - determines if there is a path between two points and fills out the values for distances and predecessor maps.
     global visited, pred
     queue = []
     
     queue.append(root)
-    
+  
     for node in nodes:
         visited[node] = False
-        
         pred[node] = -1 # We assume that the root node can't be reached, so it has no predecessor to lead back to the root node.
         
     
@@ -123,10 +134,20 @@ def bfs(adjacencies, root, target, nodes, node_count): # BFS implementation - de
     
     while len(queue) > 0:
         val = queue[0] # Get the first element of the queue
+        if bfs_visualize:
+          val.node_checked = True
+          val.draw()
+          pygame.display.update()
         queue.pop(0) # Remove the first element (first in, first out)
         
         for i in range(len(adjacencies[val])): # Iterating through all neighbors of val.
-            
+            if bfs_visualize:
+              adjacencies[val][i].adjacent_checked = True
+              adjacencies[val][i].draw()
+              pygame.display.update()
+              pygame.time.delay(200)
+              adjacencies[val][i].adjacent_checked = False
+              adjacencies[val][i].draw()
             if not visited[adjacencies[val][i]]:
                 visited[adjacencies[val][i]] = True
                 pred[adjacencies[val][i]] = val # If val is the neighbor of the node, and val leads to the root, then the predecessor is val.
@@ -134,7 +155,17 @@ def bfs(adjacencies, root, target, nodes, node_count): # BFS implementation - de
                 queue.append(adjacencies[val][i])
                 
                 if adjacencies[val][i] == target:
+                    if bfs_visualize:
+                      val.node_checked = False
+                      val.draw()
+                      pygame.display.update()
                     return True
+              
+        if bfs_visualize:
+          val.node_checked = False
+          val.draw()   
+          pygame.display.update()
+    print("finished one bfs")
     return False
 
 def best_path(adjacencies, root, target, nodes):
@@ -150,6 +181,17 @@ def best_path(adjacencies, root, target, nodes):
     while (pred[crawl] != -1): # Next add the predecessor of the target, then the predecessor of that until you have reached the root node.
         path.append(pred[crawl])
         crawl = pred[crawl] # We are iteratively visiting predecessors to 'crawl' back.
+        if best_path_visualize:
+          crawl.path_visualize = True
+          crawl.draw()   
+          pygame.display.update()
+          pygame.time.delay(200)
+    if best_path_visualize:
+      for i in path:
+        i.path_visualize = False
+        i.draw()   
+        pygame.display.update()
+      
     return path[::-1]
     
 
@@ -191,7 +233,19 @@ def show_path(path): # Main loop
 
 def main():
     init() # Initialize the maze
-    
+
+    global bfs_visualize, best_path_visualize
+    bfs_input = input("Would you like to visualize bfs (Y/N)?")
+    if(bfs_input == "Y"):
+      bfs_visualize = True
+    else:
+      bfs_visualize = False
+    best_path_input = input("Would you like to visualize the best path (Y/N)?")
+    if(best_path_input == "Y"):
+      best_path_visualize = True
+    else:
+      best_path_visualize = False
+  
     global prev_food
     prev_food = cells[0]
     generate_next_path()
@@ -209,6 +263,11 @@ def generate_next_path():
     #print("New Coordinates:", food_x, food_y)
     food_index = ((food_y-1) * maze_size) + food_x
   cells[food_index] = Cell(food_x-1, food_y-1, cell_size, food=True)
+  #draw food
+  cells[food_index].food = True
+  cells[food_index].draw()
+  pygame.display.update()
+  
   #print("Next food index:",food_index)
   #print("Next food coords:",cells[food_index].x, cells[food_index].y)
 
@@ -223,7 +282,7 @@ def generate_next_path():
   if len(path) == 0: #no path to target
     print("No path available")
   elif(snake_body_length == target_points):
-    print("got score!")
+    print("The snake reached its target length!!")
   else:
     print("showing path")
     show_path(path)
