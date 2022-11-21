@@ -75,25 +75,17 @@ class Cell: # Cell class
     def neighbors(self, cell): # Method to compute whether two cells are neighbors or not.
         return distance(self.midpoint(), cell.midpoint())-self.length == 0
 
-
-def init(): # Subroutine to randomly generate a maze and adjacency list.
-    
+# Subroutine to randomly generate a maze
+def init(): 
     global cells, adjacencies, visited, dist, pred
     cells, adjacencies = [], {}
     
     visited, pred, dist = {}, {}, {}
 
-    food_x = round(random.random() * maze_size)
-    food_y = round(random.random() * maze_size)
-    print("Coordinates:", food_x, food_y)
     for i in range(maze_size):
         for j in range(maze_size):
             if i == 0 and j == 0:
                 cell = Cell(i, j, cell_size, current=True)
-            elif j == food_x-1 and i == food_y-1:
-                cell = Cell(i, j, cell_size, food=True)
-                global food_index
-                food_index=len(cells)
             elif random.random() < probability:
                 cell = Cell(i, j, cell_size, obstacle=True)
             else:
@@ -102,16 +94,10 @@ def init(): # Subroutine to randomly generate a maze and adjacency list.
             cells.append(cell)
             visited[cell] = False
 
-    for i in cells:
-        adjacencies[i] = []
+    refresh_adjacencies()
 
-        for j in cells:
-            if (i != j and not i.obstacle and not j.obstacle):
-                if i.neighbors(j):
-                    adjacencies[i].append(j)
-
-
-def refreshAdjacencies():
+# Subroutine to make adjacency list
+def refresh_adjacencies():
   global cells, adjacencies
   for i in cells:
         adjacencies[i] = []
@@ -205,17 +191,9 @@ def show_path(path): # Main loop
 
 def main():
     init() # Initialize the maze
-    path = best_path(adjacencies, cells[0], cells[food_index], cells) # compute the path
-
-    while len(path) == 0: # If there is no path to the target node, generate a new maze until there is a path.
-        init()
-        path = best_path(adjacencies, cells[0], cells[food_index], cells)
-        #print(cells[food_index].x, cells[food_index].y)
-    global prev_food 
-    prev_food = cells[food_index]
-    prev_food.food = False
-
-    show_path(path)
+    
+    global prev_food
+    prev_food = cells[0]
     generate_next_path()
 
 def generate_next_path():
@@ -225,26 +203,18 @@ def generate_next_path():
   print("New Coordinates:", food_x, food_y)
   food_index = ((food_y-1) * maze_size) + food_x
   #make sure new food doesn't overlap with snake
-  while(check_on_body(cells[food_index])):
+  while(check_on_body(cells[food_index])): #TODO: check not obstacle
     food_x = round(random.random() * maze_size)
     food_y = round(random.random() * maze_size)
     #print("New Coordinates:", food_x, food_y)
     food_index = ((food_y-1) * maze_size) + food_x
   cells[food_index] = Cell(food_x-1, food_y-1, cell_size, food=True)
-  print("Next food index:",food_index)
+  #print("Next food index:",food_index)
   #print("Next food coords:",cells[food_index].x, cells[food_index].y)
-  
-  # path = best_path(adjacencies, cells[0], cells[food_index], cells)
-  # show_path(path)
-  #
 
-  
-  # show_path(path)
-  
   #draw path
-  #TODO: pass in current cell
   global prev_food, adjacencies
-  refreshAdjacencies()
+  refresh_adjacencies()
   path = best_path(adjacencies, prev_food, cells[food_index], cells)
   #print("Prev food",prev_food.x,prev_food.y)
   print("Score:",snake_body_length)
@@ -268,6 +238,6 @@ def check_on_body(checked_cell): #TODO: test
     if(checked_cell == snake_body): #TODO: check x and y?
       return True
   return False
-  
+
 if __name__ == '__main__':
     main()
