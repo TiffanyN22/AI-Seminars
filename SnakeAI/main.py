@@ -2,7 +2,6 @@ import pygame
 import random
 import sys
 import math
-import time
 
 pygame.init()
 
@@ -16,11 +15,14 @@ maze_size = 15 #20
 
 path_lengths = []
 probability = 0.1 # The likelihood that a cell is an obstacle.
+target_points = 10
 
 cells = []
-snakeBody = []
-snakeBodyLength=5 #TODO: 0
+snake_body = []
+snake_body_length=0
 food_index = 0
+global prev_food
+
 
 adjacencies = { # Create an adjacency list.
     
@@ -88,7 +90,7 @@ def init(): # Subroutine to randomly generate a maze and adjacency list.
         for j in range(maze_size):
             if i == 0 and j == 0:
                 cell = Cell(i, j, cell_size, current=True)
-            elif i == food_x-1 and j == food_y-1:
+            elif j == food_x-1 and i == food_y-1:
                 cell = Cell(i, j, cell_size, food=True)
                 global food_index
                 food_index=len(cells)
@@ -108,6 +110,16 @@ def init(): # Subroutine to randomly generate a maze and adjacency list.
                 if i.neighbors(j):
                     adjacencies[i].append(j)
 
+
+def refreshAdjacencies():
+  global cells, adjacencies
+  for i in cells:
+        adjacencies[i] = []
+
+        for j in cells:
+            if (i != j and not i.obstacle and not j.obstacle and not i.body and not j.body):
+                if i.neighbors(j):
+                    adjacencies[i].append(j)
 
 def bfs(adjacencies, root, target, nodes, node_count): # BFS implementation - determines if there is a path between two points and fills out the values for distances and predecessor maps.
     global visited, pred
@@ -156,6 +168,7 @@ def best_path(adjacencies, root, target, nodes):
     
 
 def show_path(path): # Main loop
+    global snake_body_length
     while len(path) > 0:
         screen.fill([255, 255, 255])
         
@@ -174,15 +187,16 @@ def show_path(path): # Main loop
             cells[current_index].current = False
             cells[current_index].body = True
           
-            snakeBody.append(cells[current_index])
-            if(len(snakeBody) > snakeBodyLength):
-              snakeBody[0].body = False
-              snakeBody.pop(0)
+            snake_body.append(cells[current_index])
+            if(len(snake_body) > snake_body_length):
+              snake_body[0].body = False
+              snake_body.pop(0)
 
             #update head
             new_index = cells.index(path[1])
             cells[new_index].current = True
-        
+        else:
+          snake_body_length+=1
         path.pop(0) # Remove the most recent step taken
         
         pygame.time.delay(250)
@@ -197,9 +211,63 @@ def main():
         init()
         path = best_path(adjacencies, cells[0], cells[food_index], cells)
         #print(cells[food_index].x, cells[food_index].y)
+    global prev_food 
+    prev_food = cells[food_index]
+    prev_food.food = False
 
     show_path(path)
+    generate_next_path()
 
+def generate_next_path():
+  #new food position
+  food_x = round(random.random() * maze_size)
+  food_y = round(random.random() * maze_size)
+  print("New Coordinates:", food_x, food_y)
+  food_index = ((food_y-1) * maze_size) + food_x
+  #make sure new food doesn't overlap with snake
+  while(check_on_body(cells[food_index])):
+    food_x = round(random.random() * maze_size)
+    food_y = round(random.random() * maze_size)
+    #print("New Coordinates:", food_x, food_y)
+    food_index = ((food_y-1) * maze_size) + food_x
+  cells[food_index] = Cell(food_x-1, food_y-1, cell_size, food=True)
+  print("Next food index:",food_index)
+  #print("Next food coords:",cells[food_index].x, cells[food_index].y)
+  
+  # path = best_path(adjacencies, cells[0], cells[food_index], cells)
+  # show_path(path)
+  #
 
+  
+  # show_path(path)
+  
+  #draw path
+  #TODO: pass in current cell
+  global prev_food, adjacencies
+  refreshAdjacencies()
+  path = best_path(adjacencies, prev_food, cells[food_index], cells)
+  #print("Prev food",prev_food.x,prev_food.y)
+  print("Score:",snake_body_length)
+  prev_food.food = False
+  prev_food = cells[food_index]
+  if len(path) == 0: #no path to target
+    print("No path available")
+  elif(snake_body_length == target_points):
+    print("got score!")
+  else:
+    print("showing path")
+    show_path(path)
+    #recursively call function again unless lost (no path) or reached target points
+    generate_next_path() 
+  
+
+#returns true if the passed in cell is on the snake's body #TODO: head?
+#returns false if not
+def check_on_body(checked_cell): #TODO: test
+  for i in range(len(snake_body)):
+    if(checked_cell == snake_body): #TODO: check x and y?
+      return True
+  return False
+  
 if __name__ == '__main__':
     main()
