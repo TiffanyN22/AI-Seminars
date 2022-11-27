@@ -4,7 +4,6 @@ import sys
 import math
 
 pygame.init()
-
 pygame.display.set_caption('Snake AI')
 
 #screen settings
@@ -47,7 +46,9 @@ def distance(a, b):  # Function to compute distance between two points.
 
 
 class Cell:  # Cell class
-    def __init__(self, x, y, length=False, obstacle=False, current=False, food=False, body=False, node_checked=False, adjacent_checked=False, path_visualize=False):
+    def __init__(self, x, y, length=False, obstacle=False, current=False, 
+                 food=False, body=False, node_checked=False, 
+                 adjacent_checked=False, path_visualize=False):
         self.x = x
         self.y = y
         self.length = length
@@ -143,10 +144,10 @@ def bfs(adjacencies, root, target, nodes, node_count):
             val.node_checked = True
             val.draw()
             pygame.display.update()
-        queue.pop(0)  # Remove the first element (first in, first out)
+        queue.pop(0)  # Remove the first element (FIFO)
 
-        for i in range(len(
-                adjacencies[val])):  # Iterating through all neighbors of val.
+        # Iterate through all neighbors of val.
+        for i in range(len(adjacencies[val])):  
             if bfs_visualize:
                 adjacencies[val][i].adjacent_checked = True
                 adjacencies[val][i].draw()
@@ -154,6 +155,7 @@ def bfs(adjacencies, root, target, nodes, node_count):
                 pygame.time.delay(200)
                 adjacencies[val][i].adjacent_checked = False
                 adjacencies[val][i].draw()
+                pygame.display.update()
             if not visited[adjacencies[val][i]]:
                 visited[adjacencies[val][i]] = True
                 pred[adjacencies[val][i]] = val  # If val is the neighbor of the node, and val leads to the root, then the predecessor is val.
@@ -238,6 +240,7 @@ def show_path(path):
         pygame.display.update()
 
 
+#creates and displays maze, ask for user input for visualization, and starts generating path
 def main():
     init()  # Initialize the maze
 
@@ -263,6 +266,7 @@ def main():
     prev_food = cells[0]
     generate_next_path()
 
+#generate path from snake to food, and recusively calls itself unless there is no path or reached target points
 def generate_next_path():
     #new food position
     food_x = round(random.random() * (maze_size - 1) + 1)
@@ -291,15 +295,15 @@ def generate_next_path():
         print("The snake reached its target length!!")
     else:
         show_path(path)
-        #recursively call function again unless lost (no path) or reached target points
+        #recursively call function again 
         generate_next_path()
 
 
 #returns true if the passed in cell is on the snake's body
 #returns false if not
 def check_on_body(checked_cell):
-    for i in range(len(snake_body)):
-        if (checked_cell.x == snake_body[i].x and checked_cell.y == snake_body[i].y):
+    for i in snake_body:
+        if (checked_cell.x == i.x and checked_cell.y == i.y):
             return True
     return False
 
