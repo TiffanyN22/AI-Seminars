@@ -11,5 +11,8 @@ This program is a bot for a modified game of Snake that will generate a map with
 - Light Pink: current neighbor cell being checked in bfs visualization
 - Cyan: Path Visualization
 
+### Visualization:
+![](SnakeAIDemo.gif)
+
 ## Author
 This program was written by Tiffany Nguyen after attending a seminar on Trees and Graphs
