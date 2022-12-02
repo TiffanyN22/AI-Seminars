@@ -7,10 +7,10 @@ pygame.init()
 pygame.display.set_caption('Snake AI')
 
 #screen settings
-screen_width = 375  #600
+screen_width = 375 
 screen_height = 375
-cell_size = 25  #30
-maze_size = 15  #20
+cell_size = 25 
+maze_size = 15 
 obstacle_probability = 0.1
 cells = []
 
@@ -44,7 +44,6 @@ def distance(a, b):  # Function to compute distance between two points.
 
     return math.sqrt(x_distance**2 + y_distance**2)
 
-
 class Cell:  # Cell class
     def __init__(self, x, y, length=False, obstacle=False, current=False, 
                  food=False, body=False, node_checked=False, 
@@ -67,15 +66,15 @@ class Cell:  # Cell class
                            self.length, self.length)
 
         if self.path_visualize:
-            pygame.draw.rect(screen, (153, 255, 255), cell)
+            pygame.draw.rect(screen, (153, 255, 255), cell) #cyan
         elif self.node_checked:
-            pygame.draw.rect(screen, (255, 153, 204), cell)
+            pygame.draw.rect(screen, (255, 153, 204), cell) #pink
         elif self.adjacent_checked:
-            pygame.draw.rect(screen, (255, 204, 229), cell)
+            pygame.draw.rect(screen, (255, 204, 229), cell) #light pink
         elif self.current:
             pygame.draw.rect(screen, 'green', cell)
         elif self.body:
-            pygame.draw.rect(screen, (0, 204, 0), cell)
+            pygame.draw.rect(screen, (0, 204, 0), cell) #dark green
         elif self.food:
             pygame.draw.rect(screen, 'red', cell)
         elif self.obstacle:
@@ -146,7 +145,7 @@ def bfs(adjacencies, root, target, nodes, node_count):
             pygame.display.update()
         queue.pop(0)  # Remove the first element (FIFO)
 
-        # Iterate through all neighbors of val.
+        # Iterate through all neighbors of val
         for i in range(len(adjacencies[val])):  
             if bfs_visualize:
                 adjacencies[val][i].adjacent_checked = True
@@ -156,6 +155,7 @@ def bfs(adjacencies, root, target, nodes, node_count):
                 adjacencies[val][i].adjacent_checked = False
                 adjacencies[val][i].draw()
                 pygame.display.update()
+            
             if not visited[adjacencies[val][i]]:
                 visited[adjacencies[val][i]] = True
                 pred[adjacencies[val][i]] = val  # If val is the neighbor of the node, and val leads to the root, then the predecessor is val.
@@ -251,15 +251,10 @@ def main():
     #determine visualization
     global bfs_visualize, best_path_visualize
     bfs_input = input("Would you like to visualize bfs (Y/N)?")
-    if (bfs_input == "Y"):
-        bfs_visualize = True
-    else:
-        bfs_visualize = False
+    bfs_visualize = bfs_input == "Y"
+
     best_path_input = input("Would you like to visualize the best path (Y/N)?")
-    if (best_path_input == "Y"):
-        best_path_visualize = True
-    else:
-        best_path_visualize = False
+    best_path_visualize = best_path_input == "Y"
 
     #initialize variables and generate path
     global prev_food
